@@ -8,6 +8,7 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type tickMsg time.Time
@@ -16,19 +17,26 @@ type autoSaveMsg time.Time
 type randomLogMsg string
 
 type Model struct {
-	Engine          *game.Engine
-	Cursor          int
-	Logs            []string
-	ConfirmingReset bool
-	AnimationTick   int
-	MiningEffect    int
+	Engine            *game.Engine
+	Cursor            int
+	Logs              []string
+	ConfirmingReset   bool
+	ConfirmingPrestige bool
+	AnimationTick     int
+	MiningEffect      int
+	DataRain          []string
 }
 
 func NewModel(engine *game.Engine) Model {
+	rain := make([]string, 15)
+	for i := range rain {
+		rain[i] = " "
+	}
 	return Model{
-		Engine: engine,
-		Cursor: 0,
-		Logs:   []string{"[INFO] System online. Ka is a wheel."},
+		Engine:   engine,
+		Cursor:   0,
+		Logs:     []string{"[INFO] System online. Ka is a wheel."},
+		DataRain: rain,
 	}
 }
 
@@ -46,6 +54,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.AnimationTick++
 		if m.MiningEffect > 0 {
 			m.MiningEffect--
+		}
+		// Update Data Rain
+		if m.AnimationTick%2 == 0 {
+			copy(m.DataRain[1:], m.DataRain[:len(m.DataRain)-1])
+			chars := "01#!@$*&%"
+			m.DataRain[0] = string(chars[rand.Intn(len(chars))])
+			if rand.Intn(3) == 0 {
+				m.DataRain[0] = " "
+			}
 		}
 		return m, frame()
 
@@ -70,8 +87,24 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "n", "N", "esc":
 				m.ConfirmingReset = false
 				return m, nil
-			case "ctrl+c", "q":
-				return m, tea.Quit
+			}
+			return m, nil
+		}
+
+		if m.ConfirmingPrestige {
+			switch msg.String() {
+			case "y", "Y":
+				gain := m.Engine.CalculatePrestigeGain()
+				if gain > 0 {
+					m.Engine.Player.BeamRescue(gain)
+					storage.Save(m.Engine.Player)
+					m.addLog(fmt.Sprintf("BEAM RESCUE COMPLETE. Gained %d Ka-Points.", gain), false)
+				}
+				m.ConfirmingPrestige = false
+				return m, nil
+			case "n", "N", "esc":
+				m.ConfirmingPrestige = false
+				return m, nil
 			}
 			return m, nil
 		}
@@ -101,10 +134,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "b":
 			m.Engine.Player.Bits += 1
-			m.MiningEffect = 3 // Lasts 3 frames (150ms)
+			m.Engine.Player.TotalBitsEver += 1
+			m.MiningEffect = 3
 
 		case "r":
 			m.ConfirmingReset = true
+		case "p":
+			if m.Engine.CalculatePrestigeGain() > 0 {
+				m.ConfirmingPrestige = true
+			} else {
+				m.addLog("Not enough total bits for Beam Rescue (Min: 500k).", true)
+			}
 		}
 	}
 
@@ -121,25 +161,42 @@ func (m *Model) addLog(msg string, isErr bool) {
 
 func (m *Model) addRawLog(log string) {
 	m.Logs = append(m.Logs, log)
-	if len(m.Logs) > 10 {
+	if len(m.Logs) > 8 {
 		m.Logs = m.Logs[1:]
 	}
 }
 
 func (m Model) View() string {
+	rainPanel := m.renderDataRain()
+	leftPanel := m.renderGamePanel()
+	rightPanel := m.renderTowerPanel()
+
+	mainView := lipgloss.JoinHorizontal(lipgloss.Top, rainPanel, leftPanel, rightPanel)
+	
+	dynamicBorderColor := GetPulseColor(m.AnimationTick)
+	return StyleContainer.BorderForeground(dynamicBorderColor).Render(mainView)
+}
+
+func (m Model) renderDataRain() string {
+	rain := ""
+	for _, char := range m.DataRain {
+		rain += char + "\n"
+	}
+	return StyleDataRain.Render(rain)
+}
+
+func (m Model) renderGamePanel() string {
 	s := StyleTitle.Render(" KA-BITS: GUNSLINGER OF THE SYSTEM ") + "\n\n"
 
 	bitsStr := fmt.Sprintf("%.2f Bits", m.Engine.Player.Bits)
 	bps := m.Engine.Player.CalculateBPS(m.Engine.Registry)
 	bpsStr := fmt.Sprintf("(%.2f BPS)", bps)
 
-	// Mining pulse effect
 	moneyView := StyleMoney.Render(bitsStr)
 	if m.MiningEffect > 0 {
 		moneyView = StyleMiningPulse.Render(" " + bitsStr + " ")
 	}
 
-	// Check for synchronicity bonus
 	hasBonus := false
 	for _, count := range m.Engine.Player.UpgradesOwned {
 		if count == 19 || count == 99 {
@@ -150,9 +207,6 @@ func (m Model) View() string {
 
 	bonusStr := ""
 	if hasBonus {
-		// Glow effect based on ticks
-		glowStyles := []tea.Model{nil} // Placeholder
-		_ = glowStyles
 		var glowStyle = StyleBonusGlow1
 		switch (m.AnimationTick / 5) % 3 {
 		case 1:
@@ -163,14 +217,18 @@ func (m Model) View() string {
 		bonusStr = StyleBonusActive.Inherit(glowStyle).Render(" [Synchronicity x1.19]")
 	}
 
-	// Flow animation
 	flowChars := []string{"[ - ]", "[ - ]", "[ -- ]", "[ ---]", "[----]", "[--- ]", "[--  ]", "[ -  ]"}
 	flowView := ""
 	if bps > 0 {
 		flowView = " " + StyleFlow.Render(flowChars[m.AnimationTick%len(flowChars)])
 	}
 
-	s += moneyView + " " + StyleBPS.Render(bpsStr) + flowView + bonusStr + "\n"
+	kpView := ""
+	if m.Engine.Player.KaPoints > 0 {
+		kpView = " " + StyleKaPoints.Render(fmt.Sprintf("| %d Ka-Points", m.Engine.Player.KaPoints))
+	}
+
+	s += moneyView + " " + StyleBPS.Render(bpsStr) + flowView + bonusStr + kpView + "\n"
 	
 	if bps == 0 && m.Engine.Player.Bits < 100 {
 		s += StyleHelpTip.Render("-> TIP: Press [b] to mine manually until you can buy a Terminal! <-") + "\n"
@@ -180,6 +238,11 @@ func (m Model) View() string {
 
 	if m.ConfirmingReset {
 		s += StyleResetPrompt.Render("⚠️ WARNING: RESET SYSTEM? ⚠️\nThis will wipe ALL bits and upgrades.\nPress [y] to confirm / [n] to cancel") + "\n"
+	}
+
+	if m.ConfirmingPrestige {
+		gain := m.Engine.CalculatePrestigeGain()
+		s += StylePrestigePrompt.Render(fmt.Sprintf("✨ BEAM RESCUE ✨\nReset current run to gain %d Ka-Points?\n(+%d%% Permanent BPS Bonus)\nPress [y] to confirm / [n] to cancel", gain, gain*5)) + "\n"
 	}
 
 	s += StyleUpgradeHeader.Render("─── Hardware & Software Upgrades ───") + "\n"
@@ -204,10 +267,13 @@ func (m Model) View() string {
 		}
 
 		if m.Cursor == i {
+			// Pulsing cursor
 			cursor = "> "
+			if (m.AnimationTick/5)%2 == 0 {
+				cursor = "» "
+			}
 			itemStyle = StyleUpgradeSelected
 			
-			// Render the selected item
 			itemStr := fmt.Sprintf("%s%-20s Lvl %-2d Cost: %8.2f Bits", cursor, upgrade.Name, owned, cost)
 			s += itemStyle.Render(itemStr) + " " + typeStyle.Render("["+upgrade.Type+"]") + "\n"
 			s += StyleDescription.Render(upgrade.Description) + "\n"
@@ -230,9 +296,61 @@ func (m Model) View() string {
 		s += logStyle.Render(log) + "\n"
 	}
 
-	s += "\n" + StyleBPS.Render("[q] Quit | [b] Mine | [Enter] Buy | [r] Reset | [↑/↓] Navigate")
+	s += "\n" + StyleBPS.Render("[q] Quit | [b] Mine | [Enter] Buy | [p] Prestige | [r] Reset")
 
-	return StyleContainer.Render(s)
+	return s
+}
+
+func (m Model) renderTowerPanel() string {
+	totalUpgrades := 0
+	for _, count := range m.Engine.Player.UpgradesOwned {
+		totalUpgrades += count
+	}
+
+	towerLevels := []string{
+		"       |       ",
+		"      [ ]      ",
+		"     [   ]     ",
+		"    [     ]    ",
+		"   [       ]   ",
+		"  [         ]  ",
+		" [           ] ",
+		"[             ]",
+		"===============",
+	}
+
+	towerArt := ""
+	
+	// Shifting fog (Thinny)
+	fogChars := []string{"~  ~  ~", " ~  ~  ", "  ~  ~ ", "   ~  ~"}
+	fog := StyleThinnyFog.Render(fogChars[(m.AnimationTick/8)%len(fogChars)])
+
+	eyeChar := " "
+	if totalUpgrades > 0 {
+		eyeChar = "O"
+	}
+	if (m.AnimationTick / 10) % 2 == 0 && totalUpgrades > 0 {
+		eyeChar = "*"
+	}
+	
+	towerArt += "\n" + fog + "\n"
+	towerArt += fmt.Sprintf("       %s       \n", lipgloss.NewStyle().Foreground(GetGlowColor(m.AnimationTick)).Render(eyeChar))
+	towerArt += "       |       \n"
+
+	limit := (totalUpgrades / 2) + 1
+	if limit > len(towerLevels) {
+		limit = len(towerLevels)
+	}
+
+	for i := 0; i < limit; i++ {
+		towerArt += " " + StyleTower.Render(towerLevels[i]) + "\n"
+	}
+	
+	towerArt += "\n" + fog
+
+	return lipgloss.NewStyle().
+		PaddingLeft(10).
+		Render(towerArt)
 }
 
 func tick() tea.Cmd {

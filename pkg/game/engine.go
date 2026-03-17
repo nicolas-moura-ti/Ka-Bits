@@ -2,6 +2,7 @@ package game
 
 import (
 	"fmt"
+	"math"
 	"time"
 )
 
@@ -29,6 +30,7 @@ func (e *Engine) ProcessOfflineEarnings() (float64, time.Duration) {
 	earnings := offlineTime.Seconds() * bps * 0.75
 	
 	e.Player.Bits += earnings
+	e.Player.TotalBitsEver += earnings
 	e.Player.LastUpdate = now
 	
 	return earnings, offlineTime
@@ -36,8 +38,20 @@ func (e *Engine) ProcessOfflineEarnings() (float64, time.Duration) {
 
 func (e *Engine) Update(delta time.Duration) {
 	bps := e.Player.CalculateBPS(e.Registry)
-	e.Player.Bits += bps * delta.Seconds()
+	generated := bps * delta.Seconds()
+	e.Player.Bits += generated
+	e.Player.TotalBitsEver += generated
 	e.Player.LastUpdate = time.Now()
+}
+
+func (e *Engine) CalculatePrestigeGain() int {
+	// Formula: sqrt(TotalBits / 500,000)
+	// You need at least 500k total bits to start gaining points.
+	if e.Player.TotalBitsEver < 500000 {
+		return 0
+	}
+	points := math.Sqrt(e.Player.TotalBitsEver / 500000)
+	return int(points)
 }
 
 func (e *Engine) TryBuyUpgrade(id string) (bool, string) {

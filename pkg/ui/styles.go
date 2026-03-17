@@ -64,9 +64,19 @@ var (
 
 	StyleContainer = lipgloss.NewStyle().
 			Padding(1, 2).
-			Border(lipgloss.DoubleBorder()).
-			BorderForeground(lipgloss.Color("#00FFFF"))
-			
+			Border(lipgloss.DoubleBorder())
+
+	StyleThinnyFog = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#444444")).
+			Italic(true)
+
+	StyleDataRain = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#004400")).
+			Faint(true)
+
+	StylePulseBright = lipgloss.NewStyle().Foreground(lipgloss.Color("#00FFFF")).Bold(true)
+	StylePulseDim    = lipgloss.NewStyle().Foreground(lipgloss.Color("#008888"))
+
 	StyleHelpTip = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FFFF00")).
 			Italic(true).
@@ -80,6 +90,22 @@ var (
 				MarginTop(1).
 				MarginBottom(1)
 
+	StylePrestigePrompt = lipgloss.NewStyle().
+				Bold(true).
+				Foreground(lipgloss.Color("#000000")).
+				Background(lipgloss.Color("#FFD700")).
+				Padding(1, 2).
+				MarginTop(1).
+				MarginBottom(1)
+
+	StyleKaPoints = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#FFD700")).
+			Bold(true)
+
+	StyleTower = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#FFD700")).
+			Bold(true)
+
 	StyleTypeHardware = lipgloss.NewStyle().Foreground(lipgloss.Color("#AAAAAA")).Italic(true)
 	StyleTypeSoftware = lipgloss.NewStyle().Foreground(lipgloss.Color("#66CCFF")).Italic(true)
 	StyleTypeCosmic   = lipgloss.NewStyle().Foreground(lipgloss.Color("#FF00FF")).Italic(true)
@@ -91,3 +117,13 @@ var (
 				PaddingLeft(4).
 				MaxWidth(60)
 )
+
+func GetPulseColor(tick int) lipgloss.Color {
+	colors := []string{"#00FFFF", "#00DDDD", "#00AAAA", "#008888", "#00AAAA", "#00DDDD"}
+	return lipgloss.Color(colors[(tick/4)%len(colors)])
+}
+
+func GetGlowColor(tick int) lipgloss.Color {
+	colors := []string{"#FFD700", "#FFC400", "#FFB100", "#FF9E00", "#FFB100", "#FFC400"}
+	return lipgloss.Color(colors[(tick/6)%len(colors)])
+}

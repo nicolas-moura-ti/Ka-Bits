@@ -96,7 +96,11 @@ func (p *Player) CalculateBPS(r *UpgradeRegistry) float64 {
 			bps += upgrade.BaseBPS * float64(count)
 		}
 	}
-	return bps * bonusMultiplier
+
+	// Prestige multiplier: 5% more per Ka-Point
+	prestigeMultiplier := 1.0 + (float64(p.KaPoints) * 0.05)
+
+	return bps * bonusMultiplier * prestigeMultiplier
 }
 
 func CalculateUpgradeCost(baseCost float64, owned int) float64 {
