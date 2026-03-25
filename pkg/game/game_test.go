@@ -60,17 +60,51 @@ func TestPlayer_Reset_Consolidation(t *testing.T) {
 		t.Errorf("Reset did not clear all fields: %+v", p)
 	}
 
-	// Setup for BeamRescue (Prestige)
+}
+
+func TestPlayer_BeamRescue(t *testing.T) {
+	p := NewPlayer()
+
+	// Populate state
 	p.Bits = 100
 	p.TotalBitsEver = 500
 	p.KaPoints = 10
 	p.Resources["ore"] = 5
 	p.UpgradesOwned["test"] = 1
+	p.LastUpdate = time.Now().Add(-1 * time.Hour) // Set to 1 hour ago
 
-	// Test BeamRescue
+	oldLastUpdate := p.LastUpdate
+
+	// Call BeamRescue
 	p.BeamRescue(5) // Ganha 5 KaPoints e reseta o resto
-	if p.Bits != 0 || p.TotalBitsEver != 0 || p.KaPoints != 15 || len(p.Resources) != 0 || len(p.UpgradesOwned) != 0 {
-		t.Errorf("BeamRescue did not clear/update fields correctly: %+v", p)
+
+	if p.Bits != 0 {
+		t.Errorf("Expected Bits to be 0, got %f", p.Bits)
+	}
+	if p.TotalBitsEver != 0 {
+		t.Errorf("Expected TotalBitsEver to be 0, got %f", p.TotalBitsEver)
+	}
+	if p.KaPoints != 15 {
+		t.Errorf("Expected KaPoints to be 15, got %d", p.KaPoints)
+	}
+	if len(p.Resources) != 0 {
+		t.Errorf("Expected Resources map to be empty, got length %d", len(p.Resources))
+	}
+	if p.Resources == nil {
+		t.Errorf("Expected Resources map to be initialized, got nil")
+	}
+	if len(p.UpgradesOwned) != 0 {
+		t.Errorf("Expected UpgradesOwned map to be empty, got length %d", len(p.UpgradesOwned))
+	}
+	if p.UpgradesOwned == nil {
+		t.Errorf("Expected UpgradesOwned map to be initialized, got nil")
+	}
+	if !p.LastUpdate.After(oldLastUpdate) {
+		t.Errorf("Expected LastUpdate to be updated after %v, got %v", oldLastUpdate, p.LastUpdate)
+	}
+	// Check that LastUpdate is close to time.Now()
+	if time.Since(p.LastUpdate) > time.Second {
+		t.Errorf("Expected LastUpdate to be close to time.Now(), got %v (diff: %v)", p.LastUpdate, time.Since(p.LastUpdate))
 	}
 }
 
