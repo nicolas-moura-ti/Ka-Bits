@@ -34,6 +34,49 @@ func TestSaveLoad(t *testing.T) {
 	os.Remove(SaveFilePath + ".bak")
 }
 
+func TestLoadFromBackup(t *testing.T) {
+	// Clean up any existing files first
+	os.Remove(SaveFilePath)
+	os.Remove(SaveFilePath + ".bak")
+
+	player := game.NewPlayer()
+	player.Bits = 42.0
+
+	// First save creates save.json
+	err := Save(player)
+	if err != nil {
+		t.Fatalf("Failed initial save: %v", err)
+	}
+
+	// Change state to distinguish the second save
+	player.Bits = 99.0
+
+	// Second save moves the first save.json to save.json.bak, and writes new save.json
+	err = Save(player)
+	if err != nil {
+		t.Fatalf("Failed second save: %v", err)
+	}
+
+	// Remove the primary save file
+	err = os.Remove(SaveFilePath)
+	if err != nil {
+		t.Fatalf("Failed to remove primary save file: %v", err)
+	}
+
+	// Now Load should fall back to save.json.bak (which has Bits = 42.0)
+	loaded, err := Load()
+	if err != nil {
+		t.Fatalf("Failed to load from backup: %v", err)
+	}
+
+	if loaded.Bits != 42.0 {
+		t.Errorf("Expected 42.0 bits from backup, got %f", loaded.Bits)
+	}
+
+	// Clean up
+	os.Remove(SaveFilePath + ".bak")
+}
+
 func TestSaveBackupFailure(t *testing.T) {
 	// Create a directory with the same name as SaveFilePath to cause os.ReadFile to fail
 	os.Mkdir(SaveFilePath, 0755)
