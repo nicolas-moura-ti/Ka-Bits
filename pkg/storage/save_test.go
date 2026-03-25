@@ -46,3 +46,41 @@ func TestSaveBackupFailure(t *testing.T) {
 		t.Errorf("Expected error when backup fails, but got nil")
 	}
 }
+
+func TestSavePermissions(t *testing.T) {
+	player := game.NewPlayer()
+
+	// Initial save should create SaveFilePath
+	err := Save(player)
+	if err != nil {
+		t.Fatalf("Failed to save: %v", err)
+	}
+
+	// Second save should create SaveFilePath.bak
+	err = Save(player)
+	if err != nil {
+		t.Fatalf("Failed to save second time (to trigger backup): %v", err)
+	}
+
+	// Check SaveFilePath permissions
+	info, err := os.Stat(SaveFilePath)
+	if err != nil {
+		t.Fatalf("Failed to stat %s: %v", SaveFilePath, err)
+	}
+	if info.Mode().Perm() != 0600 {
+		t.Errorf("Expected %s to have permissions 0600, got %v", SaveFilePath, info.Mode().Perm())
+	}
+
+	// Check SaveFilePath.bak permissions
+	infoBak, err := os.Stat(SaveFilePath + ".bak")
+	if err != nil {
+		t.Fatalf("Failed to stat %s.bak: %v", SaveFilePath, err)
+	}
+	if infoBak.Mode().Perm() != 0600 {
+		t.Errorf("Expected %s.bak to have permissions 0600, got %v", SaveFilePath, infoBak.Mode().Perm())
+	}
+
+	// Clean up
+	os.Remove(SaveFilePath)
+	os.Remove(SaveFilePath + ".bak")
+}
