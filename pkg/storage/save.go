@@ -4,15 +4,25 @@ import (
 	"encoding/json"
 	"ka-bits/pkg/game"
 	"os"
+	"sync"
 )
 
 const SaveFilePath = "save.json"
+
+var saveMutex sync.Mutex
 
 func Save(player *game.Player) error {
 	data, err := json.MarshalIndent(player, "", "  ")
 	if err != nil {
 		return err
 	}
+
+	return WriteData(data)
+}
+
+func WriteData(data []byte) error {
+	saveMutex.Lock()
+	defer saveMutex.Unlock()
 
 	// Create backup before writing
 	if _, err := os.Stat(SaveFilePath); err == nil {

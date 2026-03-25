@@ -147,7 +147,7 @@ func TestProcessOfflineEarnings(t *testing.T) {
 		offlineDuration := time.Hour
 		player.LastUpdate = time.Now().Add(-offlineDuration)
 
-		earnings, duration := engine.ProcessOfflineEarnings()
+		earnings, _ := engine.ProcessOfflineEarnings()
 
 		// 75% de eficiência offline conforme sua regra de negócio
 		expectedEarnings := offlineDuration.Seconds() * 1.0 * 0.75
