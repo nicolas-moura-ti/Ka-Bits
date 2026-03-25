@@ -42,6 +42,34 @@ func TestTryBuyUpgrade(t *testing.T) {
 	}
 }
 
+func TestPlayer_Reset_Consolidation(t *testing.T) {
+	p := NewPlayer()
+	p.Bits = 100
+	p.TotalBitsEver = 500
+	p.KaPoints = 10
+	p.Resources["ore"] = 5
+	p.UpgradesOwned["test"] = 1
+
+	// Test Reset Total
+	p.Reset()
+	if p.Bits != 0 || p.TotalBitsEver != 0 || p.KaPoints != 0 || len(p.Resources) != 0 || len(p.UpgradesOwned) != 0 {
+		t.Errorf("Reset did not clear all fields: %+v", p)
+	}
+
+	// Setup for BeamRescue (Prestige)
+	p.Bits = 100
+	p.TotalBitsEver = 500
+	p.KaPoints = 10
+	p.Resources["ore"] = 5
+	p.UpgradesOwned["test"] = 1
+
+	// Test BeamRescue
+	p.BeamRescue(5) // Ganha 5 KaPoints e reseta o resto
+	if p.Bits != 0 || p.TotalBitsEver != 0 || p.KaPoints != 15 || len(p.Resources) != 0 || len(p.UpgradesOwned) != 0 {
+		t.Errorf("BeamRescue did not clear/update fields correctly: %+v", p)
+	}
+}
+
 func TestCalculatePrestigeGain(t *testing.T) {
 	tests := []struct {
 		name          string
