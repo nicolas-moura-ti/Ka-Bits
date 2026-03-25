@@ -20,12 +20,12 @@ func Save(player *game.Player) error {
 		if err != nil {
 			return err
 		}
-		if err := os.WriteFile(SaveFilePath+".bak", backupData, 0644); err != nil {
+		if err := os.WriteFile(SaveFilePath+".bak", backupData, 0600); err != nil {
 			return err
 		}
 	}
 
-	return os.WriteFile(SaveFilePath, data, 0644)
+	return os.WriteFile(SaveFilePath, data, 0600)
 }
 
 func Load() (*game.Player, error) {

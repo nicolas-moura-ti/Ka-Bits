@@ -21,18 +21,18 @@ func NewEngine(player *Player, registry *UpgradeRegistry) *Engine {
 func (e *Engine) ProcessOfflineEarnings() (float64, time.Duration) {
 	now := time.Now()
 	offlineTime := now.Sub(e.Player.LastUpdate)
-	
+
 	if offlineTime < time.Second {
 		return 0, 0
 	}
 
 	bps := e.Player.CalculateBPS(e.Registry)
 	earnings := offlineTime.Seconds() * bps * 0.75
-	
+
 	e.Player.Bits += earnings
 	e.Player.TotalBitsEver += earnings
 	e.Player.LastUpdate = now
-	
+
 	return earnings, offlineTime
 }
 

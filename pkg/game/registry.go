@@ -35,8 +35,8 @@ var InitialUpgrades = []Upgrade{
 		ID:          "terminal_gilead",
 		Name:        "Gilead Terminal",
 		Description: "A rusty terminal pulsing with the rhythm of Ka. It smells like old parchment.",
-		BaseCost:    100,  // Increased from 50
-		BaseBPS:     0.1,  // Decreased from 0.5
+		BaseCost:    100, // Increased from 50
+		BaseBPS:     0.1, // Decreased from 0.5
 		Type:        "Hardware",
 	},
 	{

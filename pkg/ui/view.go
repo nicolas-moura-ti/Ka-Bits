@@ -173,7 +173,7 @@ func (m Model) View() string {
 	rightPanel := m.renderTowerPanel()
 
 	mainView := lipgloss.JoinHorizontal(lipgloss.Top, rainPanel, leftPanel, rightPanel)
-	
+
 	// Resolução do Conflito: Mantendo a refatoração da branch main.
 	return GetContainerStyle(m.AnimationTick).Render(mainView)
 }

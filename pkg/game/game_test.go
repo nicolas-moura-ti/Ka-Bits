@@ -10,7 +10,7 @@ func TestCalculateBPS(t *testing.T) {
 	registry := NewRegistry()
 	player.UpgradesOwned["terminal_gilead"] = 2    // 0.1 BPS * 2 = 0.2
 	player.UpgradesOwned["servidor_mid_world"] = 1 // 0.5 BPS * 1 = 0.5
-	                                               // Total = 0.7 BPS
+	// Total = 0.7 BPS
 
 	bps := player.CalculateBPS(registry)
 	if bps != 0.7 {
