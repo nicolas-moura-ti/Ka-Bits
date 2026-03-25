@@ -173,8 +173,7 @@ func (m Model) View() string {
 
 	mainView := lipgloss.JoinHorizontal(lipgloss.Top, rainPanel, leftPanel, rightPanel)
 	
-	dynamicBorderColor := GetPulseColor(m.AnimationTick)
-	return StyleContainer.BorderForeground(dynamicBorderColor).Render(mainView)
+	return GetContainerStyle(m.AnimationTick).Render(mainView)
 }
 
 func (m Model) renderDataRain() string {
@@ -334,7 +333,7 @@ func (m Model) renderTowerPanel() string {
 	}
 	
 	towerArt += "\n" + fog + "\n"
-	towerArt += fmt.Sprintf("       %s       \n", lipgloss.NewStyle().Foreground(GetGlowColor(m.AnimationTick)).Render(eyeChar))
+	towerArt += fmt.Sprintf("       %s       \n", GetGlowStyle(m.AnimationTick).Render(eyeChar))
 	towerArt += "       |       \n"
 
 	limit := (totalUpgrades / 2) + 1

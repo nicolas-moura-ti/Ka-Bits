@@ -50,13 +50,13 @@ func TestPlayer_Reset_Consolidation(t *testing.T) {
 	p.Resources["ore"] = 5
 	p.UpgradesOwned["test"] = 1
 
-	// Test Reset
+	// Test Reset Total
 	p.Reset()
 	if p.Bits != 0 || p.TotalBitsEver != 0 || p.KaPoints != 0 || len(p.Resources) != 0 || len(p.UpgradesOwned) != 0 {
 		t.Errorf("Reset did not clear all fields: %+v", p)
 	}
 
-	// Setup for BeamRescue
+	// Setup for BeamRescue (Prestige)
 	p.Bits = 100
 	p.TotalBitsEver = 500
 	p.KaPoints = 10
@@ -64,8 +64,35 @@ func TestPlayer_Reset_Consolidation(t *testing.T) {
 	p.UpgradesOwned["test"] = 1
 
 	// Test BeamRescue
-	p.BeamRescue(5)
+	p.BeamRescue(5) // Ganha 5 KaPoints e reseta o resto
 	if p.Bits != 0 || p.TotalBitsEver != 0 || p.KaPoints != 15 || len(p.Resources) != 0 || len(p.UpgradesOwned) != 0 {
 		t.Errorf("BeamRescue did not clear/update fields correctly: %+v", p)
+	}
+}
+
+func TestCalculatePrestigeGain(t *testing.T) {
+	tests := []struct {
+		name          string
+		totalBitsEver float64
+		want          int
+	}{
+		{"Zero bits", 0, 0},
+		{"Just below threshold", 499999, 0},
+		{"Exactly threshold", 500000, 1},
+		{"One million bits (sqrt(2) approx 1.41)", 1000000, 1},
+		{"Two million bits (sqrt(4) = 2)", 2000000, 2},
+		{"4.5 million bits (sqrt(9) = 3)", 4500000, 3},
+		{"Very large amount", 500000000, 31}, // sqrt(1000) approx 31.62
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			player := NewPlayer()
+			player.TotalBitsEver = tt.totalBitsEver
+			engine := &Engine{Player: player}
+			if got := engine.CalculatePrestigeGain(); got != tt.want {
+				t.Errorf("CalculatePrestigeGain() with %f bits = %v, want %v", tt.totalBitsEver, got, tt.want)
+			}
+		})
 	}
 }
