@@ -66,6 +66,7 @@ func (e *Engine) TryBuyUpgrade(id string) (bool, string) {
 	if e.Player.Bits >= cost {
 		e.Player.Bits -= cost
 		e.Player.UpgradesOwned[id]++
+		e.Player.InvalidateCache()
 		return true, fmt.Sprintf("You acquired: %s!", upgrade.Name)
 	}
 

@@ -359,10 +359,7 @@ func (m Model) renderGamePanel() string {
 }
 
 func (m Model) renderTowerPanel() string {
-	totalUpgrades := 0
-	for _, count := range m.Engine.Player.UpgradesOwned {
-		totalUpgrades += count
-	}
+	totalUpgrades := m.Engine.Player.GetTotalUpgrades(m.Engine.Registry)
 
 	towerLevels := []string{
 		"        |        ",

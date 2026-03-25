@@ -82,10 +82,17 @@ var InitialUpgrades = []Upgrade{
 }
 
 func (p *Player) CalculateBPS(r *UpgradeRegistry) float64 {
+	if p.CacheValid {
+		return p.CachedBPS
+	}
+
 	bps := 0.0
 	bonusMultiplier := 1.0
+	totalUpgrades := 0
 
 	for id, count := range p.UpgradesOwned {
+		totalUpgrades += count
+
 		// Special "Sincronicidade" bonus for 19 or 99
 		if count == 19 || count == 99 {
 			bonusMultiplier = 1.19
@@ -100,7 +107,16 @@ func (p *Player) CalculateBPS(r *UpgradeRegistry) float64 {
 	// Prestige multiplier: 5% more per Ka-Point
 	prestigeMultiplier := 1.0 + (float64(p.KaPoints) * 0.05)
 
-	return bps * bonusMultiplier * prestigeMultiplier
+	p.CachedBPS = bps * bonusMultiplier * prestigeMultiplier
+	p.CachedTotalUpgrades = totalUpgrades
+	p.CacheValid = true
+
+	return p.CachedBPS
+}
+
+func (p *Player) GetTotalUpgrades(r *UpgradeRegistry) int {
+	p.CalculateBPS(r)
+	return p.CachedTotalUpgrades
 }
 
 func CalculateUpgradeCost(baseCost float64, owned int) float64 {

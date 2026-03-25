@@ -61,5 +61,7 @@ func loadFile(path string) (*game.Player, error) {
 		return nil, err
 	}
 
+	player.InvalidateCache()
+
 	return &player, nil
 }

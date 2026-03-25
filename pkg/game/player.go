@@ -12,6 +12,10 @@ type Player struct {
 	Resources     map[string]float64 `json:"resources"`
 	LastUpdate    time.Time          `json:"last_update"`
 	UpgradesOwned map[string]int     `json:"upgrades"`
+
+	CachedBPS           float64 `json:"-"`
+	CachedTotalUpgrades int     `json:"-"`
+	CacheValid          bool    `json:"-"`
 }
 
 func NewPlayer() *Player {
@@ -29,6 +33,11 @@ func (p *Player) resetRunState() {
 	p.Resources = make(map[string]float64)
 	p.LastUpdate = time.Now()
 	p.UpgradesOwned = make(map[string]int)
+	p.InvalidateCache()
+}
+
+func (p *Player) InvalidateCache() {
+	p.CacheValid = false
 }
 
 func (p *Player) Reset() {
