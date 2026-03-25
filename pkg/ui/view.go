@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"encoding/json"
 	"fmt"
 	"ka-bits/pkg/game"
 	"ka-bits/pkg/storage"
@@ -18,6 +19,7 @@ type tickMsg time.Time
 type frameMsg time.Time
 type autoSaveMsg time.Time
 type randomLogMsg string
+type saveResultMsg struct{ err error }
 
 type Model struct {
 	Engine             *game.Engine
@@ -69,23 +71,29 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, frame()
 
 	case autoSaveMsg:
-		storage.Save(m.Engine.Player)
+		cmd := saveCmd(m.Engine.Player)
 		m.addLog("Game auto-saved.", false)
-		return m, autoSave()
+		return m, tea.Batch(cmd, autoSave())
 
 	case randomLogMsg:
 		m.addRawLog(string(msg))
 		return m, randomLog()
+
+	case saveResultMsg:
+		if msg.err != nil {
+			m.addLog(fmt.Sprintf("Error saving game: %v", msg.err), true)
+		}
+		return m, nil
 
 	case tea.KeyMsg:
 		if m.ConfirmingReset {
 			switch msg.String() {
 			case "y", "Y":
 				m.Engine.Player.Reset()
-				storage.Save(m.Engine.Player)
+				cmd := saveCmd(m.Engine.Player)
 				m.addLog("SYSTEM RESET COMPLETE. Ka begins anew.", false)
 				m.ConfirmingReset = false
-				return m, nil
+				return m, cmd
 			case "n", "N", "esc":
 				m.ConfirmingReset = false
 				return m, nil
@@ -97,13 +105,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			switch msg.String() {
 			case "y", "Y":
 				gain := m.Engine.CalculatePrestigeGain()
+				var cmd tea.Cmd
 				if gain > 0 {
 					m.Engine.Player.BeamRescue(gain)
-					storage.Save(m.Engine.Player)
+					cmd = saveCmd(m.Engine.Player)
 					m.addLog(fmt.Sprintf("BEAM RESCUE COMPLETE. Gained %d Ka-Points.", gain), false)
 				}
 				m.ConfirmingPrestige = false
-				return m, nil
+				return m, cmd
 			case "n", "N", "esc":
 				m.ConfirmingPrestige = false
 				return m, nil
@@ -131,7 +140,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			success, logMsg := m.Engine.TryBuyUpgrade(upgradeID)
 			m.addLog(logMsg, !success)
 			if success {
-				storage.Save(m.Engine.Player)
+				return m, saveCmd(m.Engine.Player)
 			}
 
 		case "b":
@@ -411,6 +420,20 @@ func autoSave() tea.Cmd {
 	return tea.Tick(30*time.Second, func(t time.Time) tea.Msg {
 		return autoSaveMsg(t)
 	})
+}
+
+func saveCmd(p *game.Player) tea.Cmd {
+	// Marshal synchronously to capture state without data races
+	data, err := json.MarshalIndent(p, "", "  ")
+	if err != nil {
+		return func() tea.Msg { return saveResultMsg{err} }
+	}
+
+	return func() tea.Msg {
+		// Write to disk asynchronously
+		writeErr := storage.WriteData(data)
+		return saveResultMsg{writeErr}
+	}
 }
 
 func randomLog() tea.Cmd {
