@@ -1,6 +1,7 @@
 package game
 
 import (
+	"math"
 	"testing"
 	"time"
 )
@@ -194,4 +195,28 @@ func TestProcessOfflineEarnings(t *testing.T) {
 			t.Errorf("LastUpdate was not updated correctly")
 		}
 	})
+}
+func TestCalculateUpgradeCost(t *testing.T) {
+	tests := []struct {
+		name     string
+		baseCost float64
+		owned    int
+		want     float64
+	}{
+		{"First purchase (0 owned)", 100, 0, 100},
+		{"Second purchase (1 owned)", 100, 1, 220},
+		{"Third purchase (2 owned)", 100, 2, 484},
+		{"Zero base cost", 0, 5, 0},
+		{"Large amount owned", 10, 10, 10 * math.Pow(2.2, 10)},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := CalculateUpgradeCost(tt.baseCost, tt.owned)
+			// Epsilon comparison for floats
+			if math.Abs(got-tt.want) > 1e-9 {
+				t.Errorf("CalculateUpgradeCost(%f, %d) = %f, want %f", tt.baseCost, tt.owned, got, tt.want)
+			}
+		})
+	}
 }
