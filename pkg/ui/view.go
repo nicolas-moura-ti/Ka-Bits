@@ -86,76 +86,82 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tea.KeyMsg:
-		if m.ConfirmingReset {
-			switch msg.String() {
-			case "y", "Y":
-				m.Engine.Player.Reset()
-				cmd := saveCmd(m.Engine.Player)
-				m.addLog("SYSTEM RESET COMPLETE. Ka begins anew.", false)
-				m.ConfirmingReset = false
-				return m, cmd
-			case "n", "N", "esc":
-				m.ConfirmingReset = false
-				return m, nil
-			}
-			return m, nil
-		}
+		return m.handleKey(msg)
+	}
 
-		if m.ConfirmingPrestige {
-			switch msg.String() {
-			case "y", "Y":
-				gain := m.Engine.CalculatePrestigeGain()
-				var cmd tea.Cmd
-				if gain > 0 {
-					m.Engine.Player.BeamRescue(gain)
-					cmd = saveCmd(m.Engine.Player)
-					m.addLog(fmt.Sprintf("BEAM RESCUE COMPLETE. Gained %d Ka-Points.", gain), false)
-				}
-				m.ConfirmingPrestige = false
-				return m, cmd
-			case "n", "N", "esc":
-				m.ConfirmingPrestige = false
-				return m, nil
-			}
-			return m, nil
-		}
+	return m, nil
+}
 
+func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	if m.ConfirmingReset {
 		switch msg.String() {
-		case "ctrl+c", "q":
-			storage.Save(m.Engine.Player)
-			return m, tea.Quit
+		case "y", "Y":
+			m.Engine.Player.Reset()
+			cmd := saveCmd(m.Engine.Player)
+			m.addLog("SYSTEM RESET COMPLETE. Ka begins anew.", false)
+			m.ConfirmingReset = false
+			return m, cmd
+		case "n", "N", "esc":
+			m.ConfirmingReset = false
+			return m, nil
+		}
+		return m, nil
+	}
 
-		case "up", "k":
-			if m.Cursor > 0 {
-				m.Cursor--
+	if m.ConfirmingPrestige {
+		switch msg.String() {
+		case "y", "Y":
+			gain := m.Engine.CalculatePrestigeGain()
+			var cmd tea.Cmd
+			if gain > 0 {
+				m.Engine.Player.BeamRescue(gain)
+				cmd = saveCmd(m.Engine.Player)
+				m.addLog(fmt.Sprintf("BEAM RESCUE COMPLETE. Gained %d Ka-Points.", gain), false)
 			}
+			m.ConfirmingPrestige = false
+			return m, cmd
+		case "n", "N", "esc":
+			m.ConfirmingPrestige = false
+			return m, nil
+		}
+		return m, nil
+	}
 
-		case "down", "j":
-			if m.Cursor < len(m.Engine.Registry.Order)-1 {
-				m.Cursor++
-			}
+	switch msg.String() {
+	case "ctrl+c", "q":
+		storage.Save(m.Engine.Player)
+		return m, tea.Quit
 
-		case "enter", " ":
-			upgradeID := m.Engine.Registry.Order[m.Cursor]
-			success, logMsg := m.Engine.TryBuyUpgrade(upgradeID)
-			m.addLog(logMsg, !success)
-			if success {
-				return m, saveCmd(m.Engine.Player)
-			}
+	case "up", "k":
+		if m.Cursor > 0 {
+			m.Cursor--
+		}
 
-		case "b":
-			m.Engine.Player.Bits += 1
-			m.Engine.Player.TotalBitsEver += 1
-			m.MiningEffect = 3
+	case "down", "j":
+		if m.Cursor < len(m.Engine.Registry.Order)-1 {
+			m.Cursor++
+		}
 
-		case "r":
-			m.ConfirmingReset = true
-		case "p":
-			if m.Engine.CalculatePrestigeGain() > 0 {
-				m.ConfirmingPrestige = true
-			} else {
-				m.addLog("Not enough total bits for Beam Rescue (Min: 500k).", true)
-			}
+	case "enter", " ":
+		upgradeID := m.Engine.Registry.Order[m.Cursor]
+		success, logMsg := m.Engine.TryBuyUpgrade(upgradeID)
+		m.addLog(logMsg, !success)
+		if success {
+			return m, saveCmd(m.Engine.Player)
+		}
+
+	case "b":
+		m.Engine.Player.Bits += 1
+		m.Engine.Player.TotalBitsEver += 1
+		m.MiningEffect = 3
+
+	case "r":
+		m.ConfirmingReset = true
+	case "p":
+		if m.Engine.CalculatePrestigeGain() > 0 {
+			m.ConfirmingPrestige = true
+		} else {
+			m.addLog("Not enough total bits for Beam Rescue (Min: 500k).", true)
 		}
 	}
 
