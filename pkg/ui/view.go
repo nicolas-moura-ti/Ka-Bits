@@ -188,11 +188,11 @@ func (m Model) renderDataRain() string {
 	return StyleDataRain.Render(builder.String())
 }
 
-func (m Model) renderGamePanel() string {
-	s := StyleTitle.Render(" KA-BITS: GUNSLINGER OF THE SYSTEM ") + "\n\n"
+func (m Model) renderHeader(builder *strings.Builder, bps float64) {
+	builder.WriteString(StyleTitle.Render(" KA-BITS: GUNSLINGER OF THE SYSTEM "))
+	builder.WriteString("\n\n")
 
 	bitsStr := fmt.Sprintf("%.2f Bits", m.Engine.Player.Bits)
-	bps := m.Engine.Player.CalculateBPS(m.Engine.Registry)
 	bpsStr := fmt.Sprintf("(%.2f BPS)", bps)
 
 	moneyView := StyleMoney.Render(bitsStr)
@@ -231,24 +231,39 @@ func (m Model) renderGamePanel() string {
 		kpView = " " + StyleKaPoints.Render(fmt.Sprintf("| %d Ka-Points", m.Engine.Player.KaPoints))
 	}
 
-	s += moneyView + " " + StyleBPS.Render(bpsStr) + flowView + bonusStr + kpView + "\n"
+	builder.WriteString(moneyView)
+	builder.WriteString(" ")
+	builder.WriteString(StyleBPS.Render(bpsStr))
+	builder.WriteString(flowView)
+	builder.WriteString(bonusStr)
+	builder.WriteString(kpView)
+	builder.WriteString("\n")
 
 	if bps == 0 && m.Engine.Player.Bits < 100 {
-		s += StyleHelpTip.Render("-> TIP: Press [b] to mine manually until you can buy a Terminal! <-") + "\n"
+		builder.WriteString(StyleHelpTip.Render("-> TIP: Press [b] to mine manually until you can buy a Terminal! <-"))
+		builder.WriteString("\n")
 	} else {
-		s += "\n"
+		builder.WriteString("\n")
 	}
+}
 
+func (m Model) renderPrompts(builder *strings.Builder) {
 	if m.ConfirmingReset {
-		s += StyleResetPrompt.Render("⚠️ WARNING: RESET SYSTEM? ⚠️\nThis will wipe ALL bits and upgrades.\nPress [y] to confirm / [n] to cancel") + "\n"
+		builder.WriteString(StyleResetPrompt.Render("⚠️ WARNING: RESET SYSTEM? ⚠️\nThis will wipe ALL bits and upgrades.\nPress [y] to confirm / [n] to cancel"))
+		builder.WriteString("\n")
 	}
 
 	if m.ConfirmingPrestige {
 		gain := m.Engine.CalculatePrestigeGain()
-		s += StylePrestigePrompt.Render(fmt.Sprintf("✨ BEAM RESCUE ✨\nReset current run to gain %d Ka-Points?\n(+%d%% Permanent BPS Bonus)\nPress [y] to confirm / [n] to cancel", gain, gain*5)) + "\n"
+		builder.WriteString(StylePrestigePrompt.Render(fmt.Sprintf("✨ BEAM RESCUE ✨\nReset current run to gain %d Ka-Points?\n(+%d%% Permanent BPS Bonus)\nPress [y] to confirm / [n] to cancel", gain, gain*5)))
+		builder.WriteString("\n")
 	}
+}
 
-	s += StyleUpgradeHeader.Render("─── Hardware & Software Upgrades ───") + "\n"
+func (m Model) renderUpgrades(builder *strings.Builder) {
+	builder.WriteString(StyleUpgradeHeader.Render("─── Hardware & Software Upgrades ───"))
+	builder.WriteString("\n")
+
 	for i, id := range m.Engine.Registry.Order {
 		upgrade, _ := m.Engine.Registry.Get(id)
 		owned := m.Engine.Player.UpgradesOwned[id]
@@ -278,15 +293,24 @@ func (m Model) renderGamePanel() string {
 			itemStyle = StyleUpgradeSelected
 
 			itemStr := fmt.Sprintf("%s%-20s Lvl %-2d Cost: %8.2f Bits", cursor, upgrade.Name, owned, cost)
-			s += itemStyle.Render(itemStr) + " " + typeStyle.Render("["+upgrade.Type+"]") + "\n"
-			s += StyleDescription.Render(upgrade.Description) + "\n"
+			builder.WriteString(itemStyle.Render(itemStr))
+			builder.WriteString(" ")
+			builder.WriteString(typeStyle.Render("[" + upgrade.Type + "]"))
+			builder.WriteString("\n")
+			builder.WriteString(StyleDescription.Render(upgrade.Description))
+			builder.WriteString("\n")
 		} else {
 			itemStr := fmt.Sprintf("%s%-20s Lvl %-2d Cost: %8.2f Bits", cursor, upgrade.Name, owned, cost)
-			s += itemStyle.Render(itemStr) + "\n"
+			builder.WriteString(itemStyle.Render(itemStr))
+			builder.WriteString("\n")
 		}
 	}
+}
 
-	s += "\n" + StyleUpgradeHeader.Render("─── System Event Feed ───") + "\n"
+func (m Model) renderLogs(builder *strings.Builder) {
+	builder.WriteString("\n")
+	builder.WriteString(StyleUpgradeHeader.Render("─── System Event Feed ───"))
+	builder.WriteString("\n")
 	for _, log := range m.Logs {
 		logStyle := StyleLogInfo
 		if len(log) > 6 {
@@ -296,12 +320,26 @@ func (m Model) renderGamePanel() string {
 				logStyle = StyleLogErr
 			}
 		}
-		s += logStyle.Render(log) + "\n"
+		builder.WriteString(logStyle.Render(log))
+		builder.WriteString("\n")
 	}
 
-	s += "\n" + StyleBPS.Render("[q] Quit | [b] Mine | [Enter] Buy | [p] Prestige | [r] Reset")
+	builder.WriteString("\n")
+	builder.WriteString(StyleBPS.Render("[q] Quit | [b] Mine | [Enter] Buy | [p] Prestige | [r] Reset"))
+}
 
-	return s
+func (m Model) renderGamePanel() string {
+	bps := m.Engine.Player.CalculateBPS(m.Engine.Registry)
+
+	var builder strings.Builder
+	builder.Grow(2048)
+
+	m.renderHeader(&builder, bps)
+	m.renderPrompts(&builder)
+	m.renderUpgrades(&builder)
+	m.renderLogs(&builder)
+
+	return builder.String()
 }
 
 func (m Model) renderTowerPanel() string {
