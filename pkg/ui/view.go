@@ -12,6 +12,8 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+const DataRainChars = "01#!@$*&%"
+
 type tickMsg time.Time
 type frameMsg time.Time
 type autoSaveMsg time.Time
@@ -59,8 +61,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Update Data Rain
 		if m.AnimationTick%2 == 0 {
 			copy(m.DataRain[1:], m.DataRain[:len(m.DataRain)-1])
-			chars := "01#!@$*&%"
-			m.DataRain[0] = string(chars[rand.Intn(len(chars))])
+			m.DataRain[0] = string(DataRainChars[rand.Intn(len(DataRainChars))])
 			if rand.Intn(3) == 0 {
 				m.DataRain[0] = " "
 			}
