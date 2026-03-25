@@ -116,14 +116,38 @@ var (
 				Faint(true).
 				PaddingLeft(4).
 				MaxWidth(60)
+
+	glowColors  = []string{"#FFD700", "#FFC400", "#FFB100", "#FF9E00", "#FFB100", "#FFC400"}
+	pulseColors = []string{"#00FFFF", "#00DDDD", "#00AAAA", "#008888", "#00AAAA", "#00DDDD"}
+
+	GlowStyles      []lipgloss.Style
+	ContainerStyles []lipgloss.Style
 )
 
+func init() {
+	GlowStyles = make([]lipgloss.Style, len(glowColors))
+	for i, c := range glowColors {
+		GlowStyles[i] = lipgloss.NewStyle().Foreground(lipgloss.Color(c))
+	}
+
+	ContainerStyles = make([]lipgloss.Style, len(pulseColors))
+	for i, c := range pulseColors {
+		ContainerStyles[i] = StyleContainer.BorderForeground(lipgloss.Color(c))
+	}
+}
+
 func GetPulseColor(tick int) lipgloss.Color {
-	colors := []string{"#00FFFF", "#00DDDD", "#00AAAA", "#008888", "#00AAAA", "#00DDDD"}
-	return lipgloss.Color(colors[(tick/4)%len(colors)])
+	return lipgloss.Color(pulseColors[(tick/4)%len(pulseColors)])
 }
 
 func GetGlowColor(tick int) lipgloss.Color {
-	colors := []string{"#FFD700", "#FFC400", "#FFB100", "#FF9E00", "#FFB100", "#FFC400"}
-	return lipgloss.Color(colors[(tick/6)%len(colors)])
+	return lipgloss.Color(glowColors[(tick/6)%len(glowColors)])
+}
+
+func GetGlowStyle(tick int) lipgloss.Style {
+	return GlowStyles[(tick/6)%len(GlowStyles)]
+}
+
+func GetContainerStyle(tick int) lipgloss.Style {
+	return ContainerStyles[(tick/4)%len(ContainerStyles)]
 }
