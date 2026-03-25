@@ -16,8 +16,13 @@ func Save(player *game.Player) error {
 
 	// Create backup before writing
 	if _, err := os.Stat(SaveFilePath); err == nil {
-		backupData, _ := os.ReadFile(SaveFilePath)
-		_ = os.WriteFile(SaveFilePath+".bak", backupData, 0644)
+		backupData, err := os.ReadFile(SaveFilePath)
+		if err != nil {
+			return err
+		}
+		if err := os.WriteFile(SaveFilePath+".bak", backupData, 0644); err != nil {
+			return err
+		}
 	}
 
 	return os.WriteFile(SaveFilePath, data, 0644)
