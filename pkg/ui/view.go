@@ -173,9 +173,9 @@ func (m Model) View() string {
 	rightPanel := m.renderTowerPanel()
 
 	mainView := lipgloss.JoinHorizontal(lipgloss.Top, rainPanel, leftPanel, rightPanel)
-
-	dynamicBorderColor := GetPulseColor(m.AnimationTick)
-	return StyleContainer.BorderForeground(dynamicBorderColor).Render(mainView)
+	
+	// Resolução do Conflito: Mantendo a refatoração da branch main.
+	return GetContainerStyle(m.AnimationTick).Render(mainView)
 }
 
 func (m Model) renderDataRain() string {
@@ -311,14 +311,14 @@ func (m Model) renderTowerPanel() string {
 	}
 
 	towerLevels := []string{
-		"       |       ",
+		"        |        ",
 		"      [ ]      ",
 		"     [   ]     ",
 		"    [     ]    ",
 		"   [       ]   ",
 		"  [         ]  ",
-		" [           ] ",
-		"[             ]",
+		" [            ] ",
+		"[              ]",
 		"===============",
 	}
 
@@ -337,8 +337,8 @@ func (m Model) renderTowerPanel() string {
 	}
 
 	towerArt += "\n" + fog + "\n"
-	towerArt += fmt.Sprintf("       %s       \n", lipgloss.NewStyle().Foreground(GetGlowColor(m.AnimationTick)).Render(eyeChar))
-	towerArt += "       |       \n"
+	towerArt += fmt.Sprintf("        %s        \n", GetGlowStyle(m.AnimationTick).Render(eyeChar))
+	towerArt += "        |        \n"
 
 	limit := (totalUpgrades / 2) + 1
 	if limit > len(towerLevels) {

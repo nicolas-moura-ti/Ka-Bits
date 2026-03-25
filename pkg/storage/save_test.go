@@ -31,4 +31,18 @@ func TestSaveLoad(t *testing.T) {
 
 	// Limpar
 	os.Remove(SaveFilePath)
+	os.Remove(SaveFilePath + ".bak")
+}
+
+func TestSaveBackupFailure(t *testing.T) {
+	// Create a directory with the same name as SaveFilePath to cause os.ReadFile to fail
+	os.Mkdir(SaveFilePath, 0755)
+	defer os.RemoveAll(SaveFilePath)
+
+	player := game.NewPlayer()
+	err := Save(player)
+
+	if err == nil {
+		t.Errorf("Expected error when backup fails, but got nil")
+	}
 }
