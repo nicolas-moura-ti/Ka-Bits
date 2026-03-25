@@ -5,6 +5,7 @@ import (
 	"ka-bits/pkg/game"
 	"ka-bits/pkg/storage"
 	"math/rand"
+	"strings"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -17,14 +18,14 @@ type autoSaveMsg time.Time
 type randomLogMsg string
 
 type Model struct {
-	Engine            *game.Engine
-	Cursor            int
-	Logs              []string
-	ConfirmingReset   bool
+	Engine             *game.Engine
+	Cursor             int
+	Logs               []string
+	ConfirmingReset    bool
 	ConfirmingPrestige bool
-	AnimationTick     int
-	MiningEffect      int
-	DataRain          []string
+	AnimationTick      int
+	MiningEffect       int
+	DataRain           []string
 }
 
 func NewModel(engine *game.Engine) Model {
@@ -172,17 +173,19 @@ func (m Model) View() string {
 	rightPanel := m.renderTowerPanel()
 
 	mainView := lipgloss.JoinHorizontal(lipgloss.Top, rainPanel, leftPanel, rightPanel)
-	
+
 	dynamicBorderColor := GetPulseColor(m.AnimationTick)
 	return StyleContainer.BorderForeground(dynamicBorderColor).Render(mainView)
 }
 
 func (m Model) renderDataRain() string {
-	rain := ""
+	var builder strings.Builder
+	builder.Grow(len(m.DataRain) * 2)
 	for _, char := range m.DataRain {
-		rain += char + "\n"
+		builder.WriteString(char)
+		builder.WriteByte('\n')
 	}
-	return StyleDataRain.Render(rain)
+	return StyleDataRain.Render(builder.String())
 }
 
 func (m Model) renderGamePanel() string {
@@ -229,7 +232,7 @@ func (m Model) renderGamePanel() string {
 	}
 
 	s += moneyView + " " + StyleBPS.Render(bpsStr) + flowView + bonusStr + kpView + "\n"
-	
+
 	if bps == 0 && m.Engine.Player.Bits < 100 {
 		s += StyleHelpTip.Render("-> TIP: Press [b] to mine manually until you can buy a Terminal! <-") + "\n"
 	} else {
@@ -273,7 +276,7 @@ func (m Model) renderGamePanel() string {
 				cursor = "» "
 			}
 			itemStyle = StyleUpgradeSelected
-			
+
 			itemStr := fmt.Sprintf("%s%-20s Lvl %-2d Cost: %8.2f Bits", cursor, upgrade.Name, owned, cost)
 			s += itemStyle.Render(itemStr) + " " + typeStyle.Render("["+upgrade.Type+"]") + "\n"
 			s += StyleDescription.Render(upgrade.Description) + "\n"
@@ -320,7 +323,7 @@ func (m Model) renderTowerPanel() string {
 	}
 
 	towerArt := ""
-	
+
 	// Shifting fog (Thinny)
 	fogChars := []string{"~  ~  ~", " ~  ~  ", "  ~  ~ ", "   ~  ~"}
 	fog := StyleThinnyFog.Render(fogChars[(m.AnimationTick/8)%len(fogChars)])
@@ -329,10 +332,10 @@ func (m Model) renderTowerPanel() string {
 	if totalUpgrades > 0 {
 		eyeChar = "O"
 	}
-	if (m.AnimationTick / 10) % 2 == 0 && totalUpgrades > 0 {
+	if (m.AnimationTick/10)%2 == 0 && totalUpgrades > 0 {
 		eyeChar = "*"
 	}
-	
+
 	towerArt += "\n" + fog + "\n"
 	towerArt += fmt.Sprintf("       %s       \n", lipgloss.NewStyle().Foreground(GetGlowColor(m.AnimationTick)).Render(eyeChar))
 	towerArt += "       |       \n"
@@ -345,7 +348,7 @@ func (m Model) renderTowerPanel() string {
 	for i := 0; i < limit; i++ {
 		towerArt += " " + StyleTower.Render(towerLevels[i]) + "\n"
 	}
-	
+
 	towerArt += "\n" + fog
 
 	return lipgloss.NewStyle().
