@@ -1,11 +1,12 @@
 package ui
 
 import (
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"ka-bits/pkg/game"
 	"ka-bits/pkg/storage"
-	"math/rand"
+	"math/big"
 	"strings"
 	"time"
 
@@ -63,8 +64,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Update Data Rain
 		if m.AnimationTick%2 == 0 {
 			copy(m.DataRain[1:], m.DataRain[:len(m.DataRain)-1])
-			m.DataRain[0] = string(DataRainChars[rand.Intn(len(DataRainChars))])
-			if rand.Intn(3) == 0 {
+			m.DataRain[0] = string(DataRainChars[secureIntn(len(DataRainChars))])
+			if secureIntn(3) == 0 {
 				m.DataRain[0] = " "
 			}
 		}
@@ -439,8 +440,19 @@ func saveCmd(p *game.Player) tea.Cmd {
 	}
 }
 
+func secureIntn(n int) int {
+	if n <= 0 {
+		return 0
+	}
+	res, err := rand.Int(rand.Reader, big.NewInt(int64(n)))
+	if err != nil {
+		return 0 // Fallback
+	}
+	return int(res.Int64())
+}
+
 func randomLog() tea.Cmd {
-	return tea.Tick(time.Duration(10+rand.Intn(10))*time.Second, func(t time.Time) tea.Msg {
-		return randomLogMsg(game.RandomLogs[rand.Intn(len(game.RandomLogs))])
+	return tea.Tick(time.Duration(10+secureIntn(10))*time.Second, func(t time.Time) tea.Msg {
+		return randomLogMsg(game.RandomLogs[secureIntn(len(game.RandomLogs))])
 	})
 }
