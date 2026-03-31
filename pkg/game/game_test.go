@@ -135,6 +135,54 @@ func TestCalculatePrestigeGain(t *testing.T) {
 	}
 }
 
+func TestGetTotalUpgrades(t *testing.T) {
+	registry := NewRegistry()
+
+	t.Run("Zero upgrades", func(t *testing.T) {
+		player := NewPlayer()
+		got := player.GetTotalUpgrades(registry)
+		if got != 0 {
+			t.Errorf("Expected 0 upgrades, got %d", got)
+		}
+	})
+
+	t.Run("Multiple upgrades", func(t *testing.T) {
+		player := NewPlayer()
+		player.UpgradesOwned["terminal_gilead"] = 5
+		player.UpgradesOwned["servidor_mid_world"] = 10
+		// Total = 15
+
+		got := player.GetTotalUpgrades(registry)
+		if got != 15 {
+			t.Errorf("Expected 15 upgrades, got %d", got)
+		}
+	})
+
+	t.Run("Cache behavior", func(t *testing.T) {
+		player := NewPlayer()
+		player.UpgradesOwned["terminal_gilead"] = 5
+
+		firstCall := player.GetTotalUpgrades(registry)
+		if firstCall != 5 {
+			t.Errorf("First call: expected 5, got %d", firstCall)
+		}
+
+		// Update without invalidating cache
+		player.UpgradesOwned["terminal_gilead"] = 10
+		secondCall := player.GetTotalUpgrades(registry)
+		if secondCall != 5 {
+			t.Errorf("Second call (cached): expected 5, got %d", secondCall)
+		}
+
+		// Invalidate cache
+		player.InvalidateCache()
+		thirdCall := player.GetTotalUpgrades(registry)
+		if thirdCall != 10 {
+			t.Errorf("Third call (invalidated): expected 10, got %d", thirdCall)
+		}
+	})
+}
+
 func TestProcessOfflineEarnings(t *testing.T) {
 	registry := NewRegistry()
 
