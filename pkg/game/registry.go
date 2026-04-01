@@ -2,6 +2,12 @@ package game
 
 import "math"
 
+const (
+	SincronicidadeBonusLevel1     = 19
+	SincronicidadeBonusLevel2     = 99
+	SincronicidadeBonusMultiplier = 1.19
+)
+
 type UpgradeRegistry struct {
 	Upgrades map[string]Upgrade
 	Order    []string
@@ -93,9 +99,9 @@ func (p *Player) CalculateBPS(r *UpgradeRegistry) float64 {
 	for id, count := range p.UpgradesOwned {
 		totalUpgrades += count
 
-		// Special "Sincronicidade" bonus for 19 or 99
-		if count == 19 || count == 99 {
-			bonusMultiplier = 1.19
+		// Special "Sincronicidade" bonus
+		if count == SincronicidadeBonusLevel1 || count == SincronicidadeBonusLevel2 {
+			bonusMultiplier = SincronicidadeBonusMultiplier
 		}
 
 		upgrade, ok := r.Get(id)

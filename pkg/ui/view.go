@@ -223,7 +223,7 @@ func (m Model) renderHeader(builder *strings.Builder, bps float64) {
 
 	hasBonus := false
 	for _, count := range m.Engine.Player.UpgradesOwned {
-		if count == 19 || count == 99 {
+		if count == game.SincronicidadeBonusLevel1 || count == game.SincronicidadeBonusLevel2 {
 			hasBonus = true
 			break
 		}
@@ -238,7 +238,7 @@ func (m Model) renderHeader(builder *strings.Builder, bps float64) {
 		case 2:
 			glowStyle = StyleBonusGlow3
 		}
-		bonusStr = StyleBonusActive.Inherit(glowStyle).Render(" [Synchronicity x1.19]")
+		bonusStr = StyleBonusActive.Inherit(glowStyle).Render(fmt.Sprintf(" [Synchronicity x%.2f]", game.SincronicidadeBonusMultiplier))
 	}
 
 	flowChars := []string{"[ - ]", "[ - ]", "[ -- ]", "[ ---]", "[----]", "[--- ]", "[--  ]", "[ -  ]"}
