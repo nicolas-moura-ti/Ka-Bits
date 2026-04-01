@@ -44,13 +44,18 @@ func (e *Engine) Update(delta time.Duration) {
 	e.Player.LastUpdate = time.Now()
 }
 
+const (
+	PrestigeThreshold = 500000.0
+	PrestigeDivisor   = 500000.0
+)
+
 func (e *Engine) CalculatePrestigeGain() int {
-	// Formula: sqrt(TotalBits / 500,000)
-	// You need at least 500k total bits to start gaining points.
-	if e.Player.TotalBitsEver < 500000 {
+	// Formula: sqrt(TotalBits / PrestigeDivisor)
+	// You need at least PrestigeThreshold total bits to start gaining points.
+	if e.Player.TotalBitsEver < PrestigeThreshold {
 		return 0
 	}
-	points := math.Sqrt(e.Player.TotalBitsEver / 500000)
+	points := math.Sqrt(e.Player.TotalBitsEver / PrestigeDivisor)
 	return int(points)
 }
 
