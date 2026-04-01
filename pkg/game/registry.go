@@ -119,10 +119,12 @@ func (p *Player) GetTotalUpgrades(r *UpgradeRegistry) int {
 	return p.CachedTotalUpgrades
 }
 
+// UpgradeCostScalingFactor defines the multiplier applied to an upgrade's cost per level owned.
+// Brutal scaling (2.2 instead of 1.5) means every level more than doubles the cost.
+const UpgradeCostScalingFactor float64 = 2.2
+
 func CalculateUpgradeCost(baseCost float64, owned int) float64 {
-	// Brutal scaling (2.2 instead of 1.5)
-	// Every level more than doubles the cost.
-	return baseCost * math.Pow(2.2, float64(owned))
+	return baseCost * math.Pow(UpgradeCostScalingFactor, float64(owned))
 }
 
 var RandomLogs = []string{
