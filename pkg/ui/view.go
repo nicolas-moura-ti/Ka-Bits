@@ -196,9 +196,13 @@ func (m Model) View() string {
 }
 
 func (m Model) renderDataRain() string {
+	return renderDataRain(m.DataRain)
+}
+
+func renderDataRain(dataRain []string) string {
 	var builder strings.Builder
-	builder.Grow(len(m.DataRain) * 2)
-	for _, char := range m.DataRain {
+	builder.Grow(len(dataRain) * 2)
+	for _, char := range dataRain {
 		builder.WriteString(char)
 		builder.WriteByte('\n')
 	}
