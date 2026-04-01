@@ -8,6 +8,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 )
+
 func TestUpdate_TickMsg(t *testing.T) {
 	player := game.NewPlayer()
 	registry := game.NewRegistry()
